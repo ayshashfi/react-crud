@@ -11,6 +11,7 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.filters import SearchFilter,OrderingFilter
 from .serializers import UserSerializer
 from .models import User
+from django.contrib.auth.hashers import make_password
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -68,18 +69,22 @@ def userDetails(request,pk):
     
 
 @api_view(['PUT'])
-def userUpdate(request,pk):
+def userUpdate(request, pk):
     try:
-        data=request.data
-        user=User.objects.get(id=pk)
-        serializer=UserSerializer(user,data=data)
+        data = request.data
+        user = User.objects.get(id=pk)
+        
+        if 'password' in data and data['password']:
+            data['password'] = make_password(data['password'])
+        
+        serializer = UserSerializer(user, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         else:
-            return Response(serializer.errors,status= status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     except User.DoesNotExist:
-        return Response("User not found!",status=status.HTTP_404_NOT_FOUND)
+        return Response("User not found!", status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['DELETE'])
